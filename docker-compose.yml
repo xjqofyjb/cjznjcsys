@@ -1,0 +1,24 @@
+version: "3.9"
+services:
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: admin12345   # 首次用，登录后请在控制台改强密码
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # 控制台
+    volumes:
+      - D:/research-data-storage:/data
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: appuser
+      POSTGRES_PASSWORD: strong_db_pwd
+      POSTGRES_DB: research
+    ports:
+      - "5432:5432"
+    volumes:
+      - D:/research-db:/var/lib/postgresql/data
