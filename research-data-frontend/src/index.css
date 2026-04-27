@@ -1,230 +1,52 @@
-/* === 全局重置：让页面能铺满全屏 === */
-html, body, #root {
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  padding: 0;
-}
-
-/* Vite 模板常见干扰：不要让任何容器限宽或居中 */
-#root {
-  max-width: none !important;
-}
-
-/* 基础字体和颜色（保持浅色主题，配合你的 THEME） */
 :root {
-  font-family: -apple-system, BlinkMacSystemFont, 'Microsoft YaHei', 'Segoe UI', 'Roboto', 
-               'Helvetica Neue', Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+  font-family: "Segoe UI Variable Text", "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  color: #17314f;
+  background:
+    radial-gradient(circle at top left, rgba(90, 158, 216, 0.18), transparent 30%),
+    radial-gradient(circle at 80% 20%, rgba(67, 179, 153, 0.14), transparent 28%),
+    linear-gradient(180deg, #f5f9ff 0%, #edf4fb 55%, #e9f1f8 100%);
   color-scheme: light;
-  color: #0f172a;
-  background-color: #f5f8ff;
+  font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  
-  /* 防止移动端双击缩放 */
-  touch-action: manipulation;
 }
 
-/* 不要在 body 上用 flex/居中，会把整个页面内容居中压缩 */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
 body {
   min-width: 320px;
-  min-height: 100vh;
   overflow-x: hidden;
-  
-  /* 移动端优化 */
-  -webkit-overflow-scrolling: touch;
-  -webkit-tap-highlight-color: transparent;
 }
 
-/* 链接与按钮的常规样式 */
-a {
-  font-weight: 500;
-  color: #2563eb;
-  text-decoration: none;
-  /* 增大移动端点击区域 */
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
+button,
+input,
+textarea,
+select {
+  font: inherit;
 }
-a:hover { color: #1d4ed8; }
-a:active { opacity: 0.7; }
 
 button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #f9fafb;
-  cursor: pointer;
-  transition: border-color 0.25s, background-color 0.25s;
-  
-  /* 移动端优化：增大点击区域 */
-  min-height: 44px;
-  min-width: 44px;
-  
-  /* 防止长按选中文本 */
-  -webkit-user-select: none;
   user-select: none;
 }
 
-button:hover { 
-  border-color: #60a5fa; 
-}
-
-button:active {
-  transform: scale(0.98);
-  opacity: 0.8;
-}
-
-button:focus, button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-/* 列表样式 */
-ul {
-  list-style-type: none;
-  padding: 0;
-  margin: 0;
-}
-
-li {
-  margin-bottom: 8px;
-  padding: 10px;
-  background-color: #f9f9f9;
-  border-radius: 8px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-/* 主要按钮样式 */
-button.primary {
-  background-color: #1a73e8;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 10px 16px;
-}
-
-button.primary:hover {
-  background-color: #155ab6;
-}
-
-button.primary:active {
-  background-color: #0d47a1;
-}
-
-/* 统一盒模型 */
-*, *::before, *::after { 
-  box-sizing: border-box; 
-}
-
-/* === 响应式设计：移动端优化 === */
-
-/* 超小屏幕（手机竖屏，< 576px） */
-@media (max-width: 575px) {
-  :root {
-    font-size: 14px;
-  }
-  
-  body {
-    padding: 0;
-  }
-  
-  /* 按钮在小屏幕上占满宽度 */
-  button {
-    width: 100%;
-    padding: 12px 16px;
-  }
-  
-  /* 列表项在小屏幕上堆叠 */
-  li {
-    flex-direction: column;
-    align-items: stretch;
-  }
-}
-
-/* 小屏幕（手机横屏、小平板，576px - 767px） */
-@media (min-width: 576px) and (max-width: 767px) {
-  :root {
-    font-size: 15px;
-  }
-}
-
-/* 中等屏幕（平板，768px - 991px） */
-@media (min-width: 768px) and (max-width: 991px) {
-  :root {
-    font-size: 16px;
-  }
-}
-
-/* 大屏幕（桌面，>= 992px） */
-@media (min-width: 992px) {
-  :root {
-    font-size: 16px;
-  }
-}
-
-/* 防止图片溢出 */
 img {
-  max-width: 100%;
-  height: auto;
   display: block;
-}
-
-/* 输入框样式优化 */
-input, textarea, select {
-  font-size: 16px; /* 防止 iOS 自动缩放 */
-  padding: 10px 12px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  width: 100%;
   max-width: 100%;
-  
-  /* 移动端优化 */
-  -webkit-appearance: none;
-  appearance: none;
 }
 
-input:focus, textarea:focus, select:focus {
-  outline: none;
-  border-color: #60a5fa;
-  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
-}
-
-/* 表单优化 */
-form {
-  width: 100%;
-}
-
-/* 卡片在小屏幕上的间距 */
-@media (max-width: 767px) {
-  .card, [style*="card"] {
-    margin: 8px !important;
-    padding: 16px !important;
-  }
-}
-
-/* 确保文本不会溢出 */
-p, span, div {
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-}
-
-/* 滚动条优化（移动端隐藏） */
-@media (max-width: 767px) {
-  ::-webkit-scrollbar {
-    display: none;
-  }
-  
-  * {
-    scrollbar-width: none;
-  }
+a {
+  color: inherit;
+  text-decoration: none;
 }

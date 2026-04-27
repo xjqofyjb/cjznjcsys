@@ -1,0 +1,53 @@
+name = "research-data-platform-api"
+main = "src/index.ts"
+compatibility_date = "2026-04-27"
+
+[vars]
+APP_ENV = "development"
+PUBLIC_APP_URL = "http://localhost:5173"
+ADMIN_EMAIL_DOMAIN = "gmail.com"
+SESSION_TTL_HOURS = "168"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "research-data-platform"
+database_id = "14503c37-48e0-4c49-bf3a-9d3eeb55ae09"
+
+[[r2_buckets]]
+binding = "ASSETS_BUCKET"
+bucket_name = "research-data-assets"
+
+[[queues.producers]]
+binding = "ASSET_EVENTS"
+queue = "research-data-asset-events"
+
+[[queues.consumers]]
+queue = "research-data-asset-events"
+max_batch_size = 10
+
+[env.production.vars]
+APP_ENV = "production"
+PUBLIC_APP_URL = "https://portal.cjznjcsys.xin"
+ADMIN_EMAIL_DOMAIN = "gmail.com"
+SESSION_TTL_HOURS = "168"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "research-data-platform"
+database_id = "14503c37-48e0-4c49-bf3a-9d3eeb55ae09"
+
+[[env.production.r2_buckets]]
+binding = "ASSETS_BUCKET"
+bucket_name = "research-data-assets"
+
+[[env.production.queues.producers]]
+binding = "ASSET_EVENTS"
+queue = "research-data-asset-events"
+
+[[env.production.queues.consumers]]
+queue = "research-data-asset-events"
+max_batch_size = 10
+
+[[env.production.routes]]
+pattern = "data-api.cjznjcsys.xin"
+custom_domain = true
