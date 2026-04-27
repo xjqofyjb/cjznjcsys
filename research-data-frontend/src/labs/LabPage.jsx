@@ -4,6 +4,23 @@ import { Badge, EmptyState, LoadingState, MetricCard, PageSection, SurfaceCard }
 import { Icon } from "../shared-ui/icons";
 import { formatDateTime, prettyBytes } from "../shared-ui/formatters";
 
+function mapPublicAssetToDataset(asset) {
+  return {
+    id: asset.id,
+    title: asset.title,
+    uploader: asset.metadata?.uploaderName || asset.owner_email,
+    version: asset.version_label || "v1",
+    fileCount: 1,
+    totalSize: asset.file_size || 0,
+    datasetId: asset.dataset_kind,
+    createdAt: asset.created_at,
+    files: [asset.file_name],
+    description: asset.description || asset.metadata?.description || "",
+    visibility: asset.visibility,
+    status: asset.status,
+  };
+}
+
 export function LabPage({ lab }) {
   const [datasets, setDatasets] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -17,13 +34,13 @@ export function LabPage({ lab }) {
       setError("");
 
       try {
-        const result = await apiJson(`/datasets?lab=${encodeURIComponent(lab.key)}`);
+        const result = await apiJson(`/public/assets?lab=${encodeURIComponent(lab.key)}`);
         if (!cancelled) {
-          setDatasets(Array.isArray(result) ? result : []);
+          setDatasets((result?.items || []).map(mapPublicAssetToDataset));
         }
       } catch (nextError) {
         if (!cancelled) {
-          setError(nextError.message || "加载失败");
+          setError(nextError.message || "加载公开资源失败");
         }
       } finally {
         if (!cancelled) {
@@ -66,7 +83,7 @@ export function LabPage({ lab }) {
       <PageSection
         eyebrow="Research Design"
         title="研究抓手"
-        subtitle="围绕能力建设、方法体系与平台支撑，整理成更适合官网展示的结构。"
+        subtitle="围绕能力建设、方法体系与平台支撑，整理成更适合官网展示的研究结构。"
       >
         <div className="detail-grid">
           {lab.pillars.map((item) => (
@@ -113,17 +130,17 @@ export function LabPage({ lab }) {
       </PageSection>
 
       <PageSection
-        eyebrow="Published Datasets"
-        title="实验室公开数据"
-        subtitle="直接从后端数据接口读取，展示当前实验室已发布的数据资产。"
+        eyebrow="Published Assets"
+        title="实验室公开资源"
+        subtitle="这里会直接读取已经公开发布的实验室资源，上传完成后会自动出现在对应实验室页面。"
       >
-        {loading ? <LoadingState title="正在拉取公开数据…" /> : null}
-        {!loading && error ? <EmptyState iconType="shield" title="公开数据加载失败" description={error} /> : null}
+        {loading ? <LoadingState title="正在拉取公开资源..." /> : null}
+        {!loading && error ? <EmptyState iconType="shield" title="公开资源加载失败" description={error} /> : null}
         {!loading && !error && datasets.length === 0 ? (
           <EmptyState
             iconType="folder"
-            title="暂时还没有公开数据"
-            description="等实验室发布首批数据集后，这里会自动展示最新内容。"
+            title="暂时还没有公开资源"
+            description="把资源设为公开后，这里会自动显示最新上传内容。"
           />
         ) : null}
         {!loading && !error && datasets.length > 0 ? (
@@ -133,10 +150,10 @@ export function LabPage({ lab }) {
                 <div className="dataset-card__top">
                   <div>
                     <h3>{item.title}</h3>
-                    <p>上传者：{item.uploader || "未知"}</p>
+                    <p>{item.description || `上传者：${item.uploader || "未知"}`}</p>
                   </div>
                   <Badge tone={lab.tone} subtle>
-                    {item.version || "v1"}
+                    {item.version}
                   </Badge>
                 </div>
 
@@ -151,7 +168,7 @@ export function LabPage({ lab }) {
                   </span>
                   <span>
                     <Icon type="data" size={14} />
-                    数据集 {item.datasetId}
+                    类型 {item.datasetId}
                   </span>
                 </div>
 

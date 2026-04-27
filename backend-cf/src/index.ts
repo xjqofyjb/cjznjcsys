@@ -3,14 +3,38 @@ import type { AppEnv } from "./lib/types";
 import { authRoutes } from "./routes/auth";
 import { uploadRoutes } from "./routes/uploads";
 import { adminRoutes } from "./routes/admin";
+import { publicRoutes } from "./routes/public";
 
 const app = new Hono<{ Bindings: AppEnv }>();
 
+function resolveAllowedOrigin(requestOrigin: string | null, env: AppEnv) {
+  if (!requestOrigin) {
+    return env.PUBLIC_APP_URL || "*";
+  }
+
+  const normalizedPublicUrl = (env.PUBLIC_APP_URL || "").replace(/\/$/, "");
+  if (requestOrigin === normalizedPublicUrl) {
+    return requestOrigin;
+  }
+
+  if (requestOrigin.endsWith(".pages.dev")) {
+    return requestOrigin;
+  }
+
+  if (requestOrigin.startsWith("http://localhost:") || requestOrigin.startsWith("http://127.0.0.1:")) {
+    return requestOrigin;
+  }
+
+  return normalizedPublicUrl || "*";
+}
+
 app.use("*", async (c, next) => {
+  const requestOrigin = c.req.header("Origin") ?? null;
   await next();
-  c.header("Access-Control-Allow-Origin", c.env.PUBLIC_APP_URL || "*");
+  c.header("Access-Control-Allow-Origin", resolveAllowedOrigin(requestOrigin, c.env));
   c.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,OPTIONS");
   c.header("Access-Control-Allow-Headers", "Content-Type,Authorization");
+  c.header("Vary", "Origin");
 });
 
 app.options("*", (c) => c.body(null, 204));
@@ -32,6 +56,7 @@ app.get("/healthz", (c) =>
 );
 
 app.route("/api/v1/auth", authRoutes);
+app.route("/api/v1/public", publicRoutes);
 app.route("/api/v1/uploads", uploadRoutes);
 app.route("/api/v1/admin", adminRoutes);
 

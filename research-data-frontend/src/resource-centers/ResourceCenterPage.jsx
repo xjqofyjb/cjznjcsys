@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Badge, Button, EmptyState, MetricCard, PageSection, SurfaceCard } from "../shared-ui/components";
+import { labs } from "../labs/data";
+import { Badge, Button, EmptyState, LoadingState, MetricCard, PageSection, SurfaceCard } from "../shared-ui/components";
 import { Icon } from "../shared-ui/icons";
-import { formatDateTime, prettyBytes, toUploadPrefix } from "../shared-ui/formatters";
+import { formatDateTime, prettyBytes } from "../shared-ui/formatters";
+import { apiJson } from "../upload/api";
 import { uploadFileViaMultipart } from "../upload/multipartUpload";
 
 const toneMetrics = {
@@ -22,19 +24,51 @@ const toneMetrics = {
   ],
 };
 
+function buildItemSummary(item) {
+  const metadata = item.metadata || {};
+  const extraValues = metadata.extraValues || {};
+  const tags = [];
+
+  if (metadata.category) tags.push(metadata.category);
+  for (const value of Object.values(extraValues)) {
+    if (value) {
+      tags.push(String(value));
+    }
+  }
+
+  return {
+    id: item.id,
+    title: item.title,
+    summary: item.description || metadata.description || "已上传到资源中心，等待进一步整理与引用。",
+    category: metadata.category || item.dataset_kind,
+    author: metadata.uploaderName || item.owner_email,
+    updatedAt: item.updated_at,
+    tags: tags.slice(0, 4),
+    fileName: item.file_name,
+    fileSize: item.file_size,
+    labKey: item.lab_key,
+  };
+}
+
 export function ResourceCenterPage({ config, auth, onRequireAuth }) {
+  const allCategory = config.categories[0] || "All";
   const [view, setView] = useState("overview");
   const [search, setSearch] = useState("");
-  const [filterCategory, setFilterCategory] = useState("全部");
+  const [filterCategory, setFilterCategory] = useState(allCategory);
   const [submitCategory, setSubmitCategory] = useState(config.categories[1] || config.categories[0] || "");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [uploader, setUploader] = useState(auth.user || "");
+  const [labKey, setLabKey] = useState("");
+  const [visibility, setVisibility] = useState("public");
   const [files, setFiles] = useState([]);
   const [status, setStatus] = useState("等待上传");
   const [logs, setLogs] = useState([]);
   const [progress, setProgress] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [loadingItems, setLoadingItems] = useState(true);
+  const [itemsError, setItemsError] = useState("");
+  const [items, setItems] = useState([]);
+  const [refreshKey, setRefreshKey] = useState(0);
   const [extraValues, setExtraValues] = useState(() =>
     Object.fromEntries((config.extraFields || []).map((field) => [field.key, ""])),
   );
@@ -42,25 +76,43 @@ export function ResourceCenterPage({ config, auth, onRequireAuth }) {
   const doneRef = useRef(0);
 
   useEffect(() => {
-    if (auth.user) {
-      setUploader((current) => current || auth.user);
+    let cancelled = false;
+
+    async function loadItems() {
+      setLoadingItems(true);
+      setItemsError("");
+
+      try {
+        const result = await apiJson(`/public/assets?centerKey=${encodeURIComponent(config.key)}`);
+        if (!cancelled) {
+          setItems((result?.items || []).map(buildItemSummary));
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setItems([]);
+          setItemsError(error.message || "加载资源中心内容失败");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingItems(false);
+        }
+      }
     }
-  }, [auth.user]);
 
-  const filteredItems = useMemo(
-    () =>
-      config.sampleItems.filter((item) => {
-        const matchesCategory = filterCategory === "全部" || item.category === filterCategory;
-        const haystack = `${item.title} ${item.summary} ${item.tags.join(" ")}`.toLowerCase();
-        return matchesCategory && haystack.includes(search.trim().toLowerCase());
-      }),
-    [filterCategory, config.sampleItems, search],
-  );
+    loadItems();
+    return () => {
+      cancelled = true;
+    };
+  }, [config.key, refreshKey]);
 
-  const prefix = useMemo(
-    () => toUploadPrefix(config.datasetId, config.version, title),
-    [config.datasetId, config.version, title],
-  );
+  const filteredItems = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return items.filter((item) => {
+      const matchesCategory = filterCategory === allCategory || item.category === filterCategory;
+      const haystack = `${item.title} ${item.summary} ${item.tags.join(" ")} ${item.author}`.toLowerCase();
+      return matchesCategory && haystack.includes(query);
+    });
+  }, [allCategory, filterCategory, items, search]);
 
   function updateExtraValue(key, value) {
     setExtraValues((current) => ({ ...current, [key]: value }));
@@ -78,7 +130,9 @@ export function ResourceCenterPage({ config, auth, onRequireAuth }) {
       return;
     }
 
-    if (!title.trim() || !uploader.trim() || files.length === 0) return;
+    if (!title.trim() || files.length === 0) {
+      return;
+    }
 
     setSubmitting(true);
     setStatus("开始上传");
@@ -88,55 +142,43 @@ export function ResourceCenterPage({ config, auth, onRequireAuth }) {
     doneRef.current = 0;
 
     try {
-      const uploadedFiles = [];
-
       for (const file of files) {
         pushLog(`上传 ${file.name}`);
-        const result = await uploadFileViaMultipart({
+        await uploadFileViaMultipart({
           file,
-          prefix,
-          datasetId: config.datasetId,
-          version: config.version,
           title: title.trim(),
+          description: description.trim(),
+          datasetKind: config.key,
+          versionLabel: config.version,
+          labKey: labKey || undefined,
+          visibility,
+          metadata: {
+            centerKey: config.key,
+            centerLabel: config.label,
+            uploaderName: auth.user?.displayName || "",
+            uploaderEmail: auth.user?.email || "",
+            category: submitCategory,
+            extraValues,
+          },
           onStatus: setStatus,
           onPart: (_part, _count, size) => {
             doneRef.current += size;
             setProgress(Math.round((doneRef.current * 100) / Math.max(totalRef.current, 1)));
           },
         });
-        uploadedFiles.push(result);
       }
-
-      const metadata = {
-        centerKey: config.key,
-        centerLabel: config.label,
-        title: title.trim(),
-        description: description.trim(),
-        uploader: uploader.trim(),
-        category: submitCategory,
-        extraValues,
-        createdAt: new Date().toISOString(),
-        files: uploadedFiles,
-      };
-
-      const metadataFile = new File([JSON.stringify(metadata, null, 2)], "metadata.json", { type: "application/json" });
-      await uploadFileViaMultipart({
-        file: metadataFile,
-        prefix,
-        datasetId: config.datasetId,
-        version: config.version,
-        title: title.trim(),
-        noPrefix: true,
-        onStatus: setStatus,
-      });
 
       setStatus("上传完成");
       setProgress(100);
-      pushLog("资源与元数据已归档");
+      pushLog("资源已进入归档系统");
       setTitle("");
       setDescription("");
+      setLabKey("");
+      setVisibility("public");
       setFiles([]);
       setExtraValues(Object.fromEntries((config.extraFields || []).map((field) => [field.key, ""])));
+      setRefreshKey((current) => current + 1);
+      setView("overview");
     } catch (error) {
       setStatus("上传失败");
       pushLog(error.message || "上传失败");
@@ -160,7 +202,7 @@ export function ResourceCenterPage({ config, auth, onRequireAuth }) {
       <PageSection
         eyebrow="Center Overview"
         title={config.label}
-        subtitle="把内容展示和提交入口统一成同一种产品语言。"
+        subtitle="现在这里会直接读取已经公开发布的真实资源，不再只是静态样例。"
       >
         <div className="metric-grid">
           {(toneMetrics[config.key] || []).map((item) => (
@@ -204,12 +246,15 @@ export function ResourceCenterPage({ config, auth, onRequireAuth }) {
               </label>
             </div>
 
-            {filteredItems.length === 0 ? (
-              <EmptyState iconType={config.iconType} title="没有匹配结果" description="换个关键词，或者切换上方分类试试看。" />
-            ) : (
+            {loadingItems ? <LoadingState title="正在读取资源中心内容..." /> : null}
+            {!loadingItems && itemsError ? <EmptyState iconType="shield" title="资源中心加载失败" description={itemsError} /> : null}
+            {!loadingItems && !itemsError && filteredItems.length === 0 ? (
+              <EmptyState iconType={config.iconType} title="暂时还没有公开资源" description="把资源设为公开后，这里会自动显示最新上传内容。" />
+            ) : null}
+            {!loadingItems && !itemsError && filteredItems.length > 0 ? (
               <div className="dataset-grid">
                 {filteredItems.map((item) => (
-                  <SurfaceCard key={item.title} className="dataset-card">
+                  <SurfaceCard key={item.id} className="dataset-card">
                     <div className="dataset-card__top">
                       <div>
                         <h3>{item.title}</h3>
@@ -220,12 +265,25 @@ export function ResourceCenterPage({ config, auth, onRequireAuth }) {
                       </Badge>
                     </div>
 
-                    <div className="tag-cloud">
-                      {item.tags.map((tag) => (
-                        <Badge key={tag} tone={config.tone} subtle>
-                          {tag}
-                        </Badge>
-                      ))}
+                    {item.tags.length > 0 ? (
+                      <div className="tag-cloud">
+                        {item.tags.map((tag) => (
+                          <Badge key={`${item.id}-${tag}`} tone={config.tone} subtle>
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : null}
+
+                    <div className="dataset-card__facts">
+                      <span>
+                        <Icon type="file" size={14} />
+                        {item.fileName}
+                      </span>
+                      <span>
+                        <Icon type="storage" size={14} />
+                        {prettyBytes(item.fileSize)}
+                      </span>
                     </div>
 
                     <div className="dataset-card__footer">
@@ -235,7 +293,7 @@ export function ResourceCenterPage({ config, auth, onRequireAuth }) {
                   </SurfaceCard>
                 ))}
               </div>
-            )}
+            ) : null}
           </>
         ) : (
           <SurfaceCard className="workspace-card">
@@ -243,7 +301,7 @@ export function ResourceCenterPage({ config, auth, onRequireAuth }) {
               <div>
                 <div className="section-eyebrow">Submit Resource</div>
                 <h3>提交到 {config.label}</h3>
-                <p>复用统一上传能力，但保留每个中心自己的字段和语义。</p>
+                <p>资源上传完成后，只要设置为公开，就会同步出现在当前资源中心和对应实验室页面。</p>
               </div>
               <Badge tone={config.tone} subtle>
                 {progress}% 完成
@@ -258,7 +316,7 @@ export function ResourceCenterPage({ config, auth, onRequireAuth }) {
 
               <label className="field">
                 <span>提交人</span>
-                <input value={uploader} onChange={(event) => setUploader(event.target.value)} placeholder="填写姓名或团队" />
+                <input value={auth.user?.displayName || auth.user?.email || ""} readOnly placeholder="请先登录" />
               </label>
 
               <label className="field">
@@ -269,6 +327,27 @@ export function ResourceCenterPage({ config, auth, onRequireAuth }) {
                       {item}
                     </option>
                   ))}
+                </select>
+              </label>
+
+              <label className="field">
+                <span>关联实验室</span>
+                <select value={labKey} onChange={(event) => setLabKey(event.target.value)}>
+                  <option value="">不指定</option>
+                  {labs.map((lab) => (
+                    <option key={lab.key} value={lab.key}>
+                      {lab.shortLabel}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="field">
+                <span>可见性</span>
+                <select value={visibility} onChange={(event) => setVisibility(event.target.value)}>
+                  <option value="public">公开</option>
+                  <option value="lab">实验室内可见</option>
+                  <option value="private">仅自己可见</option>
                 </select>
               </label>
 
@@ -311,7 +390,7 @@ export function ResourceCenterPage({ config, auth, onRequireAuth }) {
                   <div>
                     <Icon type="upload" size={28} color="#0b6aa8" />
                     <strong>选择需要归档的文件</strong>
-                    <p>统一前缀：{prefix}</p>
+                    <p>系统会走新的分片上传流程，并自动写入资源中心元数据。</p>
                   </div>
                 </div>
                 {files.length > 0 ? (
@@ -336,8 +415,8 @@ export function ResourceCenterPage({ config, auth, onRequireAuth }) {
                   <span>{status}</span>
                   <span>{files.length > 0 ? `${files.length} 个文件待归档` : "等待选择文件"}</span>
                 </div>
-                <Button type="submit" disabled={submitting || !title.trim() || !uploader.trim() || files.length === 0}>
-                  {submitting ? "提交中…" : "提交归档"}
+                <Button type="submit" disabled={submitting || !title.trim() || files.length === 0}>
+                  {submitting ? "提交中..." : "提交归档"}
                 </Button>
               </div>
             </form>
