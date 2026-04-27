@@ -1,128 +1,131 @@
-import { PageSection, SurfaceCard, MetricCard, Button, Badge } from "../shared-ui/components";
+import { useMemo, useState } from "react";
+import { Badge, Button } from "../shared-ui/components";
 import { Icon } from "../shared-ui/icons";
 import { labs } from "./data";
-import { resourceCenters } from "../resource-centers/config";
 
-const overviewMetrics = [
-  { value: "28+", label: "专题数据集", iconType: "database", tone: "ocean" },
-  { value: "120K+", label: "累计文件资产", iconType: "folder", tone: "aurora" },
-  { value: "3.4 TB", label: "存储容量", iconType: "storage", tone: "violet" },
-  { value: "60+", label: "活跃协作成员", iconType: "users", tone: "copper" },
+const labCardMeta = {
+  "lab-water": {
+    accent: "#f35a10",
+    pattern: "linear-gradient(180deg, rgba(255,255,255,0.9) 0 2px, transparent 2px 8px)",
+  },
+  "lab-migrant": {
+    accent: "#efe3cf",
+    pattern: "linear-gradient(90deg, rgba(85,71,53,0.18) 0 7px, transparent 7px 12px)",
+  },
+  "lab-shipping": {
+    accent: "#2094df",
+    pattern: "linear-gradient(180deg, rgba(255,255,255,0.24) 0 2px, transparent 2px 5px)",
+  },
+  "lab-culture": {
+    accent: "#52eb8f",
+    pattern: "linear-gradient(90deg, rgba(17,88,51,0.18) 0 3px, transparent 3px 6px)",
+  },
+};
+
+const cardOffsets = [
+  { rotate: -12, shift: -186, depth: 0 },
+  { rotate: -4, shift: -64, depth: 1 },
+  { rotate: 4, shift: 64, depth: 2 },
+  { rotate: 12, shift: 186, depth: 3 },
 ];
 
-const newsroom = [
-  { title: "三峡通航态势分析项目进入联合验证阶段", tag: "平台建设", date: "2026.04.21" },
-  { title: "库区移民生计问卷新一轮样本归档完成", tag: "调查进展", date: "2026.04.15" },
-  { title: "生态价值核算工具箱更新至 2.1 版", tag: "方法更新", date: "2026.04.09" },
-];
+export function HomePage({ onEnterLab, onOpenDataCenter }) {
+  const [focusedLab, setFocusedLab] = useState(labs[2]?.key || labs[0]?.key || "");
 
-export function HomePage({ onEnterLab, onEnterResource, onOpenDataCenter }) {
+  const activeLab = useMemo(
+    () => labs.find((lab) => lab.key === focusedLab) || labs[0],
+    [focusedLab],
+  );
+
   return (
-    <>
-      <section className="hero-banner">
-        <div className="hero-banner__copy">
-          <Badge tone="ocean" subtle>
-            Research-ready workspace
-          </Badge>
-          <h1>把实验室资料、数据、代码和问卷沉淀成真正可运营的平台。</h1>
-          <p>
-            这套前端围绕科研资产全生命周期设计：展示更专业、信息更有层次，上传与归档也从单文件原型升级为可长期维护的模块化结构。
-          </p>
-          <div className="hero-banner__actions">
-            <Button onClick={onOpenDataCenter}>
-              <Icon type="data" size={16} />
-              <span>进入数据中心</span>
-            </Button>
-            <Button variant="secondary" onClick={() => onEnterResource("learning")}>
-              <Icon type="book" size={16} />
-              <span>浏览学习中心</span>
-            </Button>
-          </div>
+    <section className="home-stage">
+      <div className="home-stage__intro">
+        <Badge tone="ocean" subtle>
+          Yangtze Three Gorges Research Platform
+        </Badge>
+        <div className="home-stage__line" />
+        <h1>长江三峡数字化管理与智能决策实验室</h1>
+        <p>
+          首页现在聚焦一个更清晰的入口：实验室介绍、统一顶栏，以及四个分实验室方向的交互卡片。我们把视觉语言收得更克制，同时保留足够的层次感和展陈感。
+        </p>
+        <div className="home-stage__actions">
+          <Button onClick={onOpenDataCenter}>
+            <Icon type="data" size={16} />
+            <span>进入数据中心</span>
+          </Button>
+          <Button variant="secondary" onClick={() => onEnterLab(activeLab?.key || labs[0]?.key || "home")}>
+            <Icon type="lab" size={16} />
+            <span>进入当前实验室</span>
+          </Button>
+        </div>
+      </div>
+
+      <div className="lab-showcase">
+        <div className="lab-showcase__stack">
+          {labs.map((lab, index) => {
+            const meta = labCardMeta[lab.key] || labCardMeta["lab-water"];
+            const offset = cardOffsets[index] || cardOffsets[0];
+            const isActive = focusedLab === lab.key;
+            const isDimmed = focusedLab && focusedLab !== lab.key;
+
+            return (
+              <button
+                key={lab.key}
+                className={`lab-showcase__card ${isActive ? "is-active" : ""} ${isDimmed ? "is-dimmed" : ""}`.trim()}
+                onMouseEnter={() => setFocusedLab(lab.key)}
+                onFocus={() => setFocusedLab(lab.key)}
+                onClick={() => onEnterLab(lab.key)}
+                style={{
+                  "--card-accent": meta.accent,
+                  "--card-pattern": meta.pattern,
+                  "--card-rotate": `${offset.rotate}deg`,
+                  "--card-shift": `${offset.shift}px`,
+                  "--card-depth": offset.depth,
+                }}
+              >
+                <div className="lab-showcase__graphic" />
+                <div className="lab-showcase__content">
+                  <span className="lab-showcase__badge">{lab.badge}</span>
+                  <h2>{lab.shortLabel}</h2>
+                  <p>{lab.summary}</p>
+                </div>
+              </button>
+            );
+          })}
         </div>
 
-        <SurfaceCard className="hero-banner__panel">
-          <div className="hero-banner__visual">
-            <img src="/hero1.jpg" alt="三峡实验室平台展示" />
-          </div>
-          <div className="hero-banner__news">
-            <div className="section-eyebrow">Latest Signals</div>
-            {newsroom.map((item) => (
-              <div key={item.title} className="signal-row">
-                <div className="signal-row__tag">{item.tag}</div>
-                <div className="signal-row__title">{item.title}</div>
-                <div className="signal-row__date">{item.date}</div>
-              </div>
+        <div className="lab-showcase__detail">
+          <div className="lab-showcase__detail-eyebrow">Focused Lab</div>
+          <h3>{activeLab?.label}</h3>
+          <p>{activeLab?.mission}</p>
+          <div className="lab-showcase__detail-tags">
+            {activeLab?.highlights?.map((item) => (
+              <span key={item} className="lab-showcase__detail-chip">
+                {item}
+              </span>
             ))}
           </div>
-        </SurfaceCard>
-      </section>
-
-      <PageSection
-        eyebrow="Platform Snapshot"
-        title="平台全景"
-        subtitle="用更清晰的信息层次展示科研平台当前规模和协作状态。"
-      >
-        <div className="metric-grid">
-          {overviewMetrics.map((item) => (
-            <MetricCard key={item.label} {...item} />
-          ))}
         </div>
-      </PageSection>
 
-      <PageSection
-        eyebrow="Research Labs"
-        title="专题实验室"
-        subtitle="四个实验室以统一结构展示研究主题、平台能力和公开数据，视觉上更像正式官网。"
-      >
-        <div className="lab-grid">
-          {labs.map((lab) => (
-            <button
-              key={lab.key}
-              className="lab-tile"
-              style={{ backgroundImage: `${lab.gradient}, url(${lab.image})` }}
-              onClick={() => onEnterLab(lab.key)}
-            >
-              <div className="lab-tile__badge">{lab.badge}</div>
-              <div className="lab-tile__body">
-                <div className="lab-tile__icon">
-                  <Icon type={lab.iconType} size={22} color="#fff" />
-                </div>
-                <h3>{lab.shortLabel}</h3>
-                <p>{lab.summary}</p>
-              </div>
-              <div className="lab-tile__footer">
-                <span>{lab.highlights.join(" · ")}</span>
-                <Icon type="arrowRight" size={16} color="#fff" />
-              </div>
-            </button>
-          ))}
+        <div className="lab-showcase__legend">
+          {labs.map((lab) => {
+            const isActive = focusedLab === lab.key;
+            return (
+              <button
+                key={lab.key}
+                className={`lab-showcase__legend-item ${isActive ? "is-active" : ""}`.trim()}
+                onMouseEnter={() => setFocusedLab(lab.key)}
+                onFocus={() => setFocusedLab(lab.key)}
+                onClick={() => onEnterLab(lab.key)}
+              >
+                <span className="lab-showcase__legend-dot" style={{ background: labCardMeta[lab.key]?.accent }} />
+                <strong>{lab.shortLabel}</strong>
+                <span>{lab.label}</span>
+              </button>
+            );
+          })}
         </div>
-      </PageSection>
-
-      <PageSection
-        eyebrow="Knowledge Flows"
-        title="资源中心"
-        subtitle="把资料、代码和问卷设计成统一的信息中心，而不是分散的孤立页面。"
-      >
-        <div className="resource-grid">
-          {resourceCenters.map((center) => (
-            <SurfaceCard key={center.key} className="resource-card">
-              <div className="resource-card__icon" style={{ backgroundImage: center.gradient }}>
-                <Icon type={center.iconType} size={22} color="#fff" />
-              </div>
-              <h3>{center.label}</h3>
-              <p>{center.subtitle}</p>
-              <div className="resource-card__meta">
-                <span>{center.categories.slice(1, 4).join(" · ")}</span>
-              </div>
-              <Button variant="secondary" onClick={() => onEnterResource(center.key)}>
-                <span>进入 {center.label}</span>
-                <Icon type="arrowRight" size={16} />
-              </Button>
-            </SurfaceCard>
-          ))}
-        </div>
-      </PageSection>
-    </>
+      </div>
+    </section>
   );
 }

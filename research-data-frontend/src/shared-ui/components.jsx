@@ -92,7 +92,7 @@ export function EmptyState({ iconType = "folder", title, description, action }) 
   );
 }
 
-export function LoadingState({ title = "正在加载内容…" }) {
+export function LoadingState({ title = "正在加载内容..." }) {
   return (
     <SurfaceCard className="empty-state">
       <div className="loading-dot" />
@@ -164,7 +164,7 @@ function DesktopNav({ active, onNavigate, onOpenLogin, authedUser, onLogout, res
         >
           <button className={`topbar-nav__item ${isLabActive ? "is-active" : ""}`}>
             <Icon type="lab" size={16} />
-            <span>实验室</span>
+            <span>分实验室</span>
             <Icon type="chevronDown" size={14} style={{ opacity: 0.8 }} />
           </button>
           {labsOpen ? (
@@ -251,7 +251,7 @@ function MobileNav({ active, onNavigate, onOpenLogin, authedUser, onLogout, reso
           </div>
 
           <div className="mobile-nav__group">
-            <div className="mobile-nav__title">实验室</div>
+            <div className="mobile-nav__title">分实验室</div>
             {labs.map((lab) => (
               <button
                 key={lab.key}
@@ -304,7 +304,7 @@ export function AppTopBar({ active, onNavigate, onOpenLogin, authedUser, onLogou
           </div>
           <div className="brand-lockup__text">
             <span className="brand-lockup__eyebrow">Research Data Platform</span>
-            <strong>长江三峡实验室数据中枢</strong>
+            <strong>长江三峡数字化管理与智能决策实验室</strong>
           </div>
         </button>
 
@@ -339,12 +339,12 @@ export function AppFooter() {
     <footer className="app-footer">
       <div className="app-footer__inner">
         <div>
-          <div className="section-eyebrow">Integrated Research Workspace</div>
-          <h3>从数据治理到科研展示，把实验室资产沉淀成可持续平台。</h3>
+          <div className="section-eyebrow">Yangtze Three Gorges Lab</div>
+          <h3>长江三峡数字化管理与智能决策实验室</h3>
         </div>
         <div className="app-footer__meta">
-          <span>面向科研资料、代码、问卷与专题实验室场景</span>
-          <span>Design refresh · Modular frontend architecture</span>
+          <span>面向科研资料、公开资源、专题实验室与数据归档协同场景</span>
+          <span>Digital governance · intelligent decision-making · long-term research assets</span>
         </div>
       </div>
     </footer>

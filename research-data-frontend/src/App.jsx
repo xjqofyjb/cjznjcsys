@@ -16,7 +16,7 @@ export default function App() {
   const auth = useAuthController();
 
   useEffect(() => {
-    document.title = "长江三峡实验室数据中枢";
+    document.title = "长江三峡数字化管理与智能决策实验室";
   }, []);
 
   const resourceItems = useMemo(
