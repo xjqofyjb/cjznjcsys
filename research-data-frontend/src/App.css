@@ -52,7 +52,7 @@
   position: sticky;
   top: 0;
   z-index: 20;
-  padding: 18px 0 10px;
+  padding: 14px 0 8px;
 }
 
 .topbar {
@@ -61,38 +61,54 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 18px;
-  padding: 16px 18px;
-  border: 1px solid rgba(255, 255, 255, 0.65);
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.72);
-  box-shadow: 0 22px 50px rgba(18, 46, 78, 0.10);
-  backdrop-filter: blur(18px);
+  gap: 16px;
+  padding: 10px 12px 10px 14px;
+  border: 1px solid rgba(28, 55, 82, 0.08);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: 0 16px 42px rgba(18, 46, 78, 0.10);
+  backdrop-filter: blur(22px) saturate(1.2);
+}
+
+.topbar::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: 19px;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0));
+}
+
+.topbar > * {
+  position: relative;
+  z-index: 1;
 }
 
 .brand-lockup {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   border: none;
   background: transparent;
   text-align: left;
   padding: 0;
+  min-width: 0;
 }
 
 .brand-lockup__mark {
-  width: 48px;
-  height: 48px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #0b4f7a 0%, #2f95c6 100%);
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #163a5c 0%, #0a7ab8 58%, #34b68b 100%);
   display: grid;
   place-items: center;
-  box-shadow: 0 14px 32px rgba(21, 94, 145, 0.25);
+  box-shadow: 0 12px 28px rgba(21, 94, 145, 0.24);
 }
 
 .brand-lockup__mark img {
-  width: 30px;
-  height: 30px;
+  width: 27px;
+  height: 27px;
   object-fit: contain;
 }
 
@@ -103,17 +119,17 @@
 }
 
 .brand-lockup__eyebrow {
-  font-size: 11px;
-  letter-spacing: 0.16em;
+  font-size: 10px;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: #6982a1;
 }
 
 .brand-lockup__text strong {
-  font-size: 16px;
+  font-size: 15px;
   color: #14314d;
   line-height: 1.25;
-  max-width: 420px;
+  max-width: 430px;
 }
 
 .topbar-nav,
@@ -152,7 +168,17 @@
 
 .topbar-nav,
 .topbar-actions {
-  gap: 12px;
+  gap: 10px;
+}
+
+.topbar-nav__track {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid rgba(15, 46, 79, 0.08);
+  border-radius: 999px;
+  background: rgba(245, 249, 252, 0.78);
 }
 
 .topbar-nav__item,
@@ -168,17 +194,21 @@
 }
 
 .topbar-nav__item {
-  gap: 8px;
-  padding: 10px 14px;
+  gap: 7px;
+  min-height: 38px;
+  padding: 0 13px;
   border-radius: 999px;
   background: transparent;
   color: #37506e;
+  font-weight: 650;
+  font-size: 14px;
 }
 
 .topbar-nav__item:hover,
 .topbar-nav__item.is-active {
-  background: rgba(11, 106, 168, 0.08);
+  background: rgba(255, 255, 255, 0.96);
   color: #0b5f95;
+  box-shadow: 0 8px 20px rgba(30, 73, 108, 0.10);
 }
 
 .topbar-dropdown {
@@ -187,14 +217,15 @@
 
 .topbar-menu {
   position: absolute;
-  top: calc(100% + 10px);
+  top: calc(100% + 12px);
   left: 0;
-  min-width: 280px;
-  padding: 8px;
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.94);
-  box-shadow: 0 24px 48px rgba(16, 35, 63, 0.18);
-  backdrop-filter: blur(16px);
+  min-width: 304px;
+  padding: 9px;
+  border: 1px solid rgba(15, 46, 79, 0.08);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 22px 52px rgba(16, 35, 63, 0.16);
+  backdrop-filter: blur(18px);
 }
 
 .topbar-menu--wide {
@@ -203,9 +234,9 @@
 
 .topbar-menu__item {
   width: 100%;
-  gap: 14px;
+  gap: 12px;
   padding: 12px;
-  border-radius: 16px;
+  border-radius: 12px;
   background: transparent;
   text-align: left;
 }
@@ -224,9 +255,9 @@
 }
 
 .topbar-menu__icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 12px;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
   background: rgba(11, 106, 168, 0.08);
   color: #0b6aa8;
 }
@@ -244,17 +275,20 @@
 
 .user-chip {
   gap: 8px;
-  padding: 10px 14px;
+  min-height: 38px;
+  padding: 0 13px;
   border-radius: 999px;
-  background: rgba(11, 106, 168, 0.08);
+  background: rgba(11, 106, 168, 0.07);
   color: #0b5f95;
+  font-weight: 650;
+  font-size: 14px;
 }
 
 .app-button {
   gap: 8px;
   justify-content: center;
-  min-height: 44px;
-  padding: 0 18px;
+  min-height: 40px;
+  padding: 0 16px;
   border-radius: 999px;
   font-weight: 600;
 }

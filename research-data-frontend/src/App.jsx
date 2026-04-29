@@ -78,7 +78,6 @@ export default function App() {
         authedUser={auth.user?.displayName || auth.user?.email || ""}
         onLogout={auth.logout}
         resourceItems={resourceItems}
-        labs={labs}
       />
 
       <main className="app-main">{renderPage()}</main>

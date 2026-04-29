@@ -102,11 +102,9 @@ export function LoadingState({ title = "正在加载内容..." }) {
   );
 }
 
-function DesktopNav({ active, onNavigate, onOpenLogin, authedUser, onLogout, resourceItems, labs }) {
+function DesktopNav({ active, onNavigate, onOpenLogin, authedUser, onLogout, resourceItems }) {
   const [resourcesOpen, setResourcesOpen] = useState(false);
-  const [labsOpen, setLabsOpen] = useState(false);
   const isResourceActive = resourceItems.some((item) => item.key === active);
-  const isLabActive = labs.some((item) => item.key === active);
 
   const items = useMemo(
     () => [
@@ -118,70 +116,45 @@ function DesktopNav({ active, onNavigate, onOpenLogin, authedUser, onLogout, res
 
   return (
     <>
-      <nav className="topbar-nav">
-        {items.map((item) => (
-          <button
-            key={item.key}
-            className={`topbar-nav__item ${active === item.key ? "is-active" : ""}`}
-            onClick={() => onNavigate(item.key)}
+      <nav className="topbar-nav" aria-label="主导航">
+        <div className="topbar-nav__track">
+          {items.map((item) => (
+            <button
+              key={item.key}
+              className={`topbar-nav__item ${active === item.key ? "is-active" : ""}`}
+              onClick={() => onNavigate(item.key)}
+            >
+              <Icon type={item.iconType} size={15} />
+              <span>{item.label}</span>
+            </button>
+          ))}
+
+          <div
+            className="topbar-dropdown"
+            onMouseEnter={() => setResourcesOpen(true)}
+            onMouseLeave={() => setResourcesOpen(false)}
           >
-            <Icon type={item.iconType} size={16} />
-            <span>{item.label}</span>
-          </button>
-        ))}
-
-        <div
-          className="topbar-dropdown"
-          onMouseEnter={() => setResourcesOpen(true)}
-          onMouseLeave={() => setResourcesOpen(false)}
-        >
-          <button className={`topbar-nav__item ${isResourceActive ? "is-active" : ""}`}>
-            <Icon type="folder" size={16} />
-            <span>资源中心</span>
-            <Icon type="chevronDown" size={14} style={{ opacity: 0.8 }} />
-          </button>
-          {resourcesOpen ? (
-            <div className="topbar-menu">
-              {resourceItems.map((item) => (
-                <button key={item.key} className="topbar-menu__item" onClick={() => onNavigate(item.key)}>
-                  <div className="topbar-menu__icon">
-                    <Icon type={item.iconType} size={16} />
-                  </div>
-                  <div>
-                    <div className="topbar-menu__title">{item.label}</div>
-                    <div className="topbar-menu__desc">{item.subtitle}</div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          ) : null}
-        </div>
-
-        <div
-          className="topbar-dropdown"
-          onMouseEnter={() => setLabsOpen(true)}
-          onMouseLeave={() => setLabsOpen(false)}
-        >
-          <button className={`topbar-nav__item ${isLabActive ? "is-active" : ""}`}>
-            <Icon type="lab" size={16} />
-            <span>分实验室</span>
-            <Icon type="chevronDown" size={14} style={{ opacity: 0.8 }} />
-          </button>
-          {labsOpen ? (
-            <div className="topbar-menu topbar-menu--wide">
-              {labs.map((lab) => (
-                <button key={lab.key} className="topbar-menu__item" onClick={() => onNavigate(lab.key)}>
-                  <div className="topbar-menu__icon">
-                    <Icon type={lab.iconType} size={16} />
-                  </div>
-                  <div>
-                    <div className="topbar-menu__title">{lab.shortLabel}</div>
-                    <div className="topbar-menu__desc">{lab.highlights.join(" · ")}</div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          ) : null}
+            <button className={`topbar-nav__item ${isResourceActive ? "is-active" : ""}`}>
+              <Icon type="folder" size={15} />
+              <span>资源中心</span>
+              <Icon type="chevronDown" size={13} style={{ opacity: 0.72 }} />
+            </button>
+            {resourcesOpen ? (
+              <div className="topbar-menu">
+                {resourceItems.map((item) => (
+                  <button key={item.key} className="topbar-menu__item" onClick={() => onNavigate(item.key)}>
+                    <div className="topbar-menu__icon">
+                      <Icon type={item.iconType} size={16} />
+                    </div>
+                    <div>
+                      <div className="topbar-menu__title">{item.label}</div>
+                      <div className="topbar-menu__desc">{item.subtitle}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
         </div>
       </nav>
 
@@ -189,7 +162,7 @@ function DesktopNav({ active, onNavigate, onOpenLogin, authedUser, onLogout, res
         {authedUser ? (
           <>
             <div className="user-chip">
-              <Icon type="users" size={16} />
+              <Icon type="users" size={15} />
               <span>{authedUser}</span>
             </div>
             <Button variant="ghost" onClick={onLogout}>
@@ -198,14 +171,17 @@ function DesktopNav({ active, onNavigate, onOpenLogin, authedUser, onLogout, res
             </Button>
           </>
         ) : (
-          <Button onClick={onOpenLogin}>登录平台</Button>
+          <Button onClick={onOpenLogin}>
+            <Icon type="shield" size={15} />
+            <span>登录平台</span>
+          </Button>
         )}
       </div>
     </>
   );
 }
 
-function MobileNav({ active, onNavigate, onOpenLogin, authedUser, onLogout, resourceItems, labs }) {
+function MobileNav({ active, onNavigate, onOpenLogin, authedUser, onLogout, resourceItems }) {
   const [open, setOpen] = useState(false);
 
   const closeAndGo = (key) => {
@@ -250,20 +226,6 @@ function MobileNav({ active, onNavigate, onOpenLogin, authedUser, onLogout, reso
             ))}
           </div>
 
-          <div className="mobile-nav__group">
-            <div className="mobile-nav__title">分实验室</div>
-            {labs.map((lab) => (
-              <button
-                key={lab.key}
-                className={`mobile-nav__item ${active === lab.key ? "is-active" : ""}`}
-                onClick={() => closeAndGo(lab.key)}
-              >
-                <Icon type={lab.iconType} size={16} />
-                <span>{lab.shortLabel}</span>
-              </button>
-            ))}
-          </div>
-
           {authedUser ? (
             <div className="mobile-nav__auth">
               <div className="user-chip">
@@ -283,7 +245,8 @@ function MobileNav({ active, onNavigate, onOpenLogin, authedUser, onLogout, reso
                 onOpenLogin();
               }}
             >
-              登录平台
+              <Icon type="shield" size={15} />
+              <span>登录平台</span>
             </Button>
           )}
         </div>
@@ -292,7 +255,7 @@ function MobileNav({ active, onNavigate, onOpenLogin, authedUser, onLogout, reso
   );
 }
 
-export function AppTopBar({ active, onNavigate, onOpenLogin, authedUser, onLogout, resourceItems, labs }) {
+export function AppTopBar({ active, onNavigate, onOpenLogin, authedUser, onLogout, resourceItems }) {
   const isMobile = useIsMobile();
 
   return (
@@ -303,7 +266,7 @@ export function AppTopBar({ active, onNavigate, onOpenLogin, authedUser, onLogou
             <img src="/logo.png" alt="logo" />
           </div>
           <div className="brand-lockup__text">
-            <span className="brand-lockup__eyebrow">Research Data Platform</span>
+            <span className="brand-lockup__eyebrow">Yangtze Three Gorges Lab</span>
             <strong>长江三峡数字化管理与智能决策实验室</strong>
           </div>
         </button>
@@ -316,7 +279,6 @@ export function AppTopBar({ active, onNavigate, onOpenLogin, authedUser, onLogou
             authedUser={authedUser}
             onLogout={onLogout}
             resourceItems={resourceItems}
-            labs={labs}
           />
         ) : (
           <DesktopNav
@@ -326,7 +288,6 @@ export function AppTopBar({ active, onNavigate, onOpenLogin, authedUser, onLogou
             authedUser={authedUser}
             onLogout={onLogout}
             resourceItems={resourceItems}
-            labs={labs}
           />
         )}
       </div>
