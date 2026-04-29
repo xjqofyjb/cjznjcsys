@@ -44,9 +44,9 @@ export function HomePage({ onEnterLab, onOpenDataCenter }) {
           Yangtze Three Gorges Research Platform
         </Badge>
         <div className="home-stage__line" />
-        <h1>长江三峡数字化管理与智能决策实验室</h1>
+        <h1>长江三峡数字化管理与智能决策实验室（数据中心）</h1>
         <p>
-          首页现在聚焦一个更清晰的入口：实验室介绍、统一顶栏，以及四个分实验室方向的交互卡片。我们把视觉语言收得更克制，同时保留足够的层次感和展陈感。
+          首页聚焦一个更清晰的入口：实验室介绍、统一顶栏，以及四个分实验室方向的交互卡片。整体视觉更克制，也保留足够的层次感和展陈感。
         </p>
         <div className="home-stage__actions">
           <Button onClick={onOpenDataCenter}>

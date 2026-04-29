@@ -267,7 +267,7 @@ export function AppTopBar({ active, onNavigate, onOpenLogin, authedUser, onLogou
           </div>
           <div className="brand-lockup__text">
             <span className="brand-lockup__eyebrow">Yangtze Three Gorges Lab</span>
-            <strong>长江三峡数字化管理与智能决策实验室</strong>
+            <strong>长江三峡数字化管理与智能决策实验室（数据中心）</strong>
           </div>
         </button>
 
@@ -301,7 +301,7 @@ export function AppFooter() {
       <div className="app-footer__inner">
         <div>
           <div className="section-eyebrow">Yangtze Three Gorges Lab</div>
-          <h3>长江三峡数字化管理与智能决策实验室</h3>
+          <h3>长江三峡数字化管理与智能决策实验室（数据中心）</h3>
         </div>
         <div className="app-footer__meta">
           <span>面向科研资料、公开资源、专题实验室与数据归档协同场景</span>
