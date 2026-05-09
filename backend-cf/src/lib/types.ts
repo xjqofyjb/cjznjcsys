@@ -9,6 +9,7 @@ export type AppEnv = {
 };
 
 export type UserRole = "admin" | "uploader" | "viewer";
+export type UserStatus = "pending" | "active" | "disabled";
 
 export type SessionState = "created" | "uploading" | "completing" | "completed" | "aborted" | "failed";
 
@@ -18,18 +19,20 @@ export type AssetVisibility = "private" | "lab" | "public";
 export type AuthUser = {
   id: string;
   email: string;
+  username: string;
   displayName: string;
   role: UserRole;
-  status: string;
+  status: UserStatus;
   lastLoginAt?: string | null;
 };
 
 export type UserRow = {
   id: string;
   email: string;
+  username: string;
   display_name: string;
   role: UserRole;
-  status: string;
+  status: UserStatus;
   password_hash: string | null;
   password_salt: string | null;
   password_iterations: number;

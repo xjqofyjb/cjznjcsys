@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import type { AppEnv } from "../lib/types";
-import { badRequest, notFound } from "../lib/utils";
+import { badRequest, forbidden, notFound } from "../lib/utils";
 import { getAuthUser } from "../services/auth";
 import { completeUpload, createUploadSession, getUploadSession, listOwnAssets, listOwnUploadSessions, uploadPart } from "../services/uploads";
 
@@ -10,6 +10,10 @@ uploadRoutes.post("/sessions", async (c) => {
   const user = await getAuthUser(c);
   if (user instanceof Response) {
     return user;
+  }
+
+  if (user.role === "viewer") {
+    return forbidden("Uploader or admin role required");
   }
 
   const body = await c.req.json<{

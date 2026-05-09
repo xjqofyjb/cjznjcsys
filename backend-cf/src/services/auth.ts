@@ -1,6 +1,6 @@
 import type { Context } from "hono";
 import { all, first } from "../lib/db";
-import type { AppEnv, AuthUser, UserRole, UserRow } from "../lib/types";
+import type { AppEnv, AuthUser, UserRole, UserRow, UserStatus } from "../lib/types";
 import {
   bytesToHex,
   decodeBase64,
@@ -16,10 +16,11 @@ import {
 const DEFAULT_PASSWORD_ITERATIONS = 100000;
 const DEFAULT_SESSION_TTL_HOURS = 168;
 
-function userToAuthUser(user: Pick<UserRow, "id" | "email" | "display_name" | "role" | "status" | "last_login_at">): AuthUser {
+function userToAuthUser(user: Pick<UserRow, "id" | "email" | "username" | "display_name" | "role" | "status" | "last_login_at">): AuthUser {
   return {
     id: user.id,
     email: user.email,
+    username: user.username,
     displayName: user.display_name,
     role: user.role,
     status: user.status,
@@ -29,6 +30,14 @@ function userToAuthUser(user: Pick<UserRow, "id" | "email" | "display_name" | "r
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
+}
+
+function normalizeUsername(username: string) {
+  return username.trim().toLowerCase();
+}
+
+export function isValidUsername(username: string) {
+  return /^[a-zA-Z0-9._-]{3,32}$/.test(username.trim());
 }
 
 function looksLikeHex(value: string) {
@@ -125,7 +134,7 @@ export async function findUserByEmail(env: AppEnv, email: string) {
   return first<UserRow>(
     env.DB.prepare(
       `SELECT
-        id, email, display_name, role, status, password_hash, password_salt,
+        id, email, username, display_name, role, status, password_hash, password_salt,
         password_iterations, password_updated_at, last_login_at, created_at, updated_at
       FROM users
       WHERE email = ?1
@@ -134,12 +143,26 @@ export async function findUserByEmail(env: AppEnv, email: string) {
   );
 }
 
+export async function findUserByIdentifier(env: AppEnv, identifier: string) {
+  const normalized = normalizeEmail(identifier);
+  return first<UserRow>(
+    env.DB.prepare(
+      `SELECT
+        id, email, username, display_name, role, status, password_hash, password_salt,
+        password_iterations, password_updated_at, last_login_at, created_at, updated_at
+      FROM users
+      WHERE email = ?1 OR username = ?1
+      LIMIT 1`,
+    ).bind(normalized),
+  );
+}
+
 export async function bootstrapAdminPassword(env: AppEnv, input: { email: string; password: string; displayName?: string }) {
   const email = normalizeEmail(input.email);
   const admin = await first<UserRow>(
     env.DB.prepare(
       `SELECT
-        id, email, display_name, role, status, password_hash, password_salt,
+        id, email, username, display_name, role, status, password_hash, password_salt,
         password_iterations, password_updated_at, last_login_at, created_at, updated_at
       FROM users
       WHERE email = ?1 AND role = 'admin'
@@ -186,17 +209,24 @@ export async function bootstrapAdminPassword(env: AppEnv, input: { email: string
 
 export async function loginWithPassword(
   env: AppEnv,
-  input: { email: string; password: string },
+  input: { identifier: string; password: string },
   metadata?: { ipAddress?: string | null; userAgent?: string | null },
 ) {
-  const user = await findUserByEmail(env, input.email);
-  if (!user || user.status !== "active") {
+  const user = await findUserByIdentifier(env, input.identifier);
+  if (!user) {
     return null;
   }
 
   const ok = await verifyPassword(input.password, user);
   if (!ok) {
     return null;
+  }
+
+  if (user.status !== "active") {
+    return {
+      error: user.status === "pending" ? "Account is pending admin approval" : "Account is disabled",
+      status: user.status,
+    } as const;
   }
 
   return createSession(env, user, metadata);
@@ -230,6 +260,7 @@ export async function getAuthUser<E extends { Bindings: AppEnv }>(c: Context<E>)
       `SELECT
         u.id,
         u.email,
+        u.username,
         u.display_name,
         u.role,
         u.status,
@@ -284,15 +315,23 @@ export async function createUserWithPassword(
   env: AppEnv,
   input: {
     email: string;
+    username?: string;
     password: string;
     displayName: string;
     role: UserRole;
-    status?: "active" | "disabled";
+    status?: UserStatus;
   },
 ) {
   const email = normalizeEmail(input.email);
-  const existing = await findUserByEmail(env, email);
-  if (existing) {
+  const username = normalizeUsername(input.username || email.split("@")[0] || input.displayName);
+
+  if (!isValidUsername(username)) {
+    return { error: "Username must be 3-32 characters and use letters, numbers, dot, underscore, or hyphen" as const };
+  }
+
+  const existing = await findUserByIdentifier(env, email);
+  const existingUsername = await findUserByIdentifier(env, username);
+  if (existing || existingUsername) {
     return { error: "User already exists" as const };
   }
 
@@ -303,8 +342,9 @@ export async function createUserWithPassword(
   await env.DB.prepare(
     `INSERT INTO users (
       id, email, display_name, role, status, password_hash, password_salt,
+      username,
       password_iterations, password_updated_at, created_at, updated_at
-    ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?10)`,
+    ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?11)`,
   ).bind(
     userId,
     email,
@@ -313,6 +353,7 @@ export async function createUserWithPassword(
     input.status ?? "active",
     password.hash,
     password.salt,
+    username,
     password.iterations,
     now,
     now,
@@ -321,20 +362,39 @@ export async function createUserWithPassword(
   return findUserByEmail(env, email);
 }
 
+export async function registerUploader(
+  env: AppEnv,
+  input: {
+    username: string;
+    email: string;
+    password: string;
+    displayName?: string;
+  },
+) {
+  return createUserWithPassword(env, {
+    email: input.email,
+    username: input.username,
+    password: input.password,
+    displayName: input.displayName?.trim() || input.username.trim(),
+    role: "uploader",
+    status: "pending",
+  });
+}
+
 export async function updateManagedUser(
   env: AppEnv,
   userId: string,
   input: {
     displayName?: string;
     role?: UserRole;
-    status?: "active" | "disabled";
+    status?: UserStatus;
     password?: string;
   },
 ) {
   const user = await first<UserRow>(
     env.DB.prepare(
       `SELECT
-        id, email, display_name, role, status, password_hash, password_salt,
+        id, email, username, display_name, role, status, password_hash, password_salt,
         password_iterations, password_updated_at, last_login_at, created_at, updated_at
       FROM users
       WHERE id = ?1
@@ -395,7 +455,7 @@ export async function updateManagedUser(
   return first<UserRow>(
     env.DB.prepare(
       `SELECT
-        id, email, display_name, role, status, password_hash, password_salt,
+        id, email, username, display_name, role, status, password_hash, password_salt,
         password_iterations, password_updated_at, last_login_at, created_at, updated_at
       FROM users
       WHERE id = ?1

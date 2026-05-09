@@ -1987,6 +1987,11 @@
   color: #b23d42;
 }
 
+.form-note--success {
+  background: rgba(48, 169, 142, 0.10);
+  color: #0c7768;
+}
+
 .empty-state {
   text-align: center;
 }
@@ -2022,11 +2027,23 @@
   padding: 0;
 }
 
+.auth-modal {
+  border-radius: 30px;
+  box-shadow: 0 30px 90px rgba(8, 30, 52, 0.28);
+}
+
 .login-modal__hero {
   position: relative;
   padding: 34px 28px 26px;
   background: linear-gradient(135deg, #0b4f7a 0%, #0d77b2 100%);
   color: #fff;
+}
+
+.auth-modal__hero {
+  background:
+    radial-gradient(circle at 18% 12%, rgba(255, 255, 255, 0.28), transparent 32%),
+    radial-gradient(circle at 86% 18%, rgba(75, 221, 194, 0.24), transparent 28%),
+    linear-gradient(135deg, #0a4168 0%, #0d77b2 58%, #21a7c8 100%);
 }
 
 .login-modal__hero h3 {
@@ -2043,6 +2060,34 @@
   display: grid;
   gap: 16px;
   padding: 26px;
+}
+
+.auth-modal__register-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.auth-modal__tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 14px 18px 0;
+  background: rgba(247, 252, 255, 0.96);
+}
+
+.auth-modal__tabs button {
+  border: 1px solid rgba(16, 35, 63, 0.08);
+  border-radius: 16px;
+  padding: 11px 12px;
+  color: #45617e;
+  background: rgba(255, 255, 255, 0.72);
+  font-weight: 800;
+}
+
+.auth-modal__tabs button.is-active {
+  color: #fff;
+  border-color: transparent;
+  background: linear-gradient(135deg, #0b4f7a 0%, #0d77b2 100%);
+  box-shadow: 0 12px 28px rgba(11, 106, 168, 0.22);
 }
 
 .login-modal__close {
@@ -2248,7 +2293,9 @@
   }
 
   .login-modal__actions,
-  .hero-banner__actions {
+  .hero-banner__actions,
+  .auth-modal__register-form {
     flex-direction: column;
+    grid-template-columns: 1fr;
   }
 }

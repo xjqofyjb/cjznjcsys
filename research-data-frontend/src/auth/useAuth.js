@@ -48,7 +48,7 @@ export function useAuthController() {
     const result = await apiJson("/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ identifier: email, password }),
     });
 
     const nextToken = result?.token || "";
@@ -57,6 +57,14 @@ export function useAuthController() {
     setToken(nextToken);
     setUser(nextUser);
     return result;
+  }
+
+  async function register({ username, email, password, displayName }) {
+    return apiJson("/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, email, password, displayName }),
+    });
   }
 
   async function logout() {
@@ -80,6 +88,7 @@ export function useAuthController() {
     authed: Boolean(token),
     isAdmin: user?.role === "admin",
     login,
+    register,
     logout,
   };
 }

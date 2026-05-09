@@ -132,6 +132,7 @@ export async function listUsers(env: AppEnv) {
       `SELECT
         id,
         email,
+        username,
         display_name,
         role,
         status,

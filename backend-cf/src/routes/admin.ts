@@ -131,10 +131,11 @@ adminRoutes.post("/users", async (c) => {
   const admin = c.get("authUser");
   const body = await c.req.json<{
     email?: string;
+    username?: string;
     password?: string;
     displayName?: string;
     role?: "admin" | "uploader" | "viewer";
-    status?: "active" | "disabled";
+    status?: "pending" | "active" | "disabled";
   }>().catch(() => null);
 
   if (!body?.email || !body?.password || !body?.displayName || !body?.role) {
@@ -147,6 +148,7 @@ adminRoutes.post("/users", async (c) => {
 
   const created = await createUserWithPassword(c.env, {
     email: body.email,
+    username: body.username,
     password: body.password,
     displayName: body.displayName,
     role: body.role,
@@ -176,7 +178,7 @@ adminRoutes.patch("/users/:userId", async (c) => {
   const body = await c.req.json<{
     displayName?: string;
     role?: "admin" | "uploader" | "viewer";
-    status?: "active" | "disabled";
+    status?: "pending" | "active" | "disabled";
     password?: string;
   }>().catch(() => null);
 

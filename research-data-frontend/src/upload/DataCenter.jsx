@@ -286,6 +286,7 @@ function RecordsPanel() {
 function defaultCreateUserForm() {
   return {
     displayName: "",
+    username: "",
     email: "",
     password: "",
     role: "uploader",
@@ -302,15 +303,16 @@ function buildEditForm(user) {
   };
 }
 
-function AdminUserCard({ user, actingId, editingUserId, editForm, onStartEdit, onCancelEdit, onChangeEdit, onSubmitEdit }) {
+function AdminUserCard({ user, actingId, editingUserId, editForm, onStartEdit, onCancelEdit, onChangeEdit, onSubmitEdit, onApprove }) {
   const isEditing = editingUserId === user.id;
+  const approving = actingId === `approve-${user.id}`;
 
   return (
     <SurfaceCard className="dataset-card">
       <div className="dataset-card__top">
         <div>
           <h3>{user.display_name}</h3>
-          <p>{user.email}</p>
+          <p>@{user.username || "user"} · {user.email}</p>
         </div>
         <Badge tone={user.role === "admin" ? "copper" : user.role === "viewer" ? "aurora" : "ocean"} subtle>
           {user.role} · {user.status}
@@ -324,6 +326,11 @@ function AdminUserCard({ user, actingId, editingUserId, editForm, onStartEdit, o
 
       {!isEditing ? (
         <div className="admin-asset-actions">
+          {user.status === "pending" ? (
+            <Button disabled={approving} onClick={() => onApprove(user.id)}>
+              {approving ? "批准中..." : "批准注册"}
+            </Button>
+          ) : null}
           <Button variant="secondary" disabled={actingId === user.id} onClick={() => onStartEdit(user)}>
             编辑账号
           </Button>
@@ -347,6 +354,7 @@ function AdminUserCard({ user, actingId, editingUserId, editForm, onStartEdit, o
           <label className="field">
             <span>状态</span>
             <select value={editForm.status} onChange={(event) => onChangeEdit("status", event.target.value)}>
+              <option value="pending">pending</option>
               <option value="active">active</option>
               <option value="disabled">disabled</option>
             </select>
@@ -405,7 +413,12 @@ function AdminPanel() {
       setDashboard(dashboardResult);
       setUploads(uploadsResult?.items || []);
       setAssets(assetsResult?.items || []);
-      setUsers(usersResult?.items || []);
+      setUsers(
+        [...(usersResult?.items || [])].sort((left, right) => {
+          if (left.status === right.status) return 0;
+          return left.status === "pending" ? -1 : 1;
+        }),
+      );
       setActions(actionsResult?.items || []);
     } catch (nextError) {
       setError(nextError.message || "管理员数据加载失败");
@@ -489,6 +502,24 @@ function AdminPanel() {
     }
   }
 
+  async function handleApproveUser(userId) {
+    setActingId(`approve-${userId}`);
+    setError("");
+
+    try {
+      await apiJson(`/admin/users/${userId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "active", role: "uploader" }),
+      });
+      await loadAdminData();
+    } catch (nextError) {
+      setError(nextError.message || "批准注册失败");
+    } finally {
+      setActingId("");
+    }
+  }
+
   const metrics = dashboard?.metrics || {};
 
   return (
@@ -546,6 +577,11 @@ function AdminPanel() {
             </label>
 
             <label className="field">
+              <span>用户名</span>
+              <input value={createForm.username} onChange={(event) => setCreateForm((current) => ({ ...current, username: event.target.value }))} placeholder="用于登录，可选" />
+            </label>
+
+            <label className="field">
               <span>邮箱</span>
               <input type="email" value={createForm.email} onChange={(event) => setCreateForm((current) => ({ ...current, email: event.target.value }))} />
             </label>
@@ -567,6 +603,7 @@ function AdminPanel() {
             <label className="field">
               <span>状态</span>
               <select value={createForm.status} onChange={(event) => setCreateForm((current) => ({ ...current, status: event.target.value }))}>
+                <option value="pending">pending</option>
                 <option value="active">active</option>
                 <option value="disabled">disabled</option>
               </select>
@@ -597,6 +634,7 @@ function AdminPanel() {
                 onCancelEdit={cancelEditUser}
                 onChangeEdit={(key, value) => setEditForm((current) => ({ ...current, [key]: value }))}
                 onSubmitEdit={handleUpdateUser}
+                onApprove={handleApproveUser}
               />
             ))}
           </div>
