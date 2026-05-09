@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { labs } from "../labs/data";
 import { Badge, Button, EmptyState, LoadingState, MetricCard, PageSection, SurfaceCard } from "../shared-ui/components";
+import { AssetPreviewModal } from "../shared-ui/AssetPreviewModal";
 import { Icon } from "../shared-ui/icons";
 import { formatDateTime, prettyBytes } from "../shared-ui/formatters";
 import { apiJson } from "../upload/api";
@@ -45,7 +46,11 @@ function buildItemSummary(item) {
     updatedAt: item.updated_at,
     tags: tags.slice(0, 4),
     fileName: item.file_name,
+    file_name: item.file_name,
     fileSize: item.file_size,
+    file_size: item.file_size,
+    contentType: item.content_type,
+    content_type: item.content_type,
     labKey: item.lab_key,
   };
 }
@@ -68,6 +73,7 @@ export function ResourceCenterPage({ config, auth, onRequireAuth }) {
   const [loadingItems, setLoadingItems] = useState(true);
   const [itemsError, setItemsError] = useState("");
   const [items, setItems] = useState([]);
+  const [previewAsset, setPreviewAsset] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [extraValues, setExtraValues] = useState(() =>
     Object.fromEntries((config.extraFields || []).map((field) => [field.key, ""])),
@@ -290,6 +296,12 @@ export function ResourceCenterPage({ config, auth, onRequireAuth }) {
                       <span>{item.author}</span>
                       <span>{formatDateTime(item.updatedAt)}</span>
                     </div>
+                    <div className="dataset-card__actions">
+                      <Button variant="secondary" className="preview-button" onClick={() => setPreviewAsset(item)}>
+                        <Icon type="monitor" size={14} />
+                        <span>在线预览</span>
+                      </Button>
+                    </div>
                   </SurfaceCard>
                 ))}
               </div>
@@ -434,6 +446,8 @@ export function ResourceCenterPage({ config, auth, onRequireAuth }) {
           </SurfaceCard>
         )}
       </PageSection>
+
+      {previewAsset ? <AssetPreviewModal asset={previewAsset} onClose={() => setPreviewAsset(null)} /> : null}
     </>
   );
 }

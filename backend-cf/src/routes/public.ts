@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import type { AppEnv } from "../lib/types";
-import { listPublicAssets } from "../services/public";
+import { getPublicAssetPreview, listPublicAssets } from "../services/public";
 
 export const publicRoutes = new Hono<{ Bindings: AppEnv }>();
 
@@ -18,4 +18,14 @@ publicRoutes.get("/assets", async (c) => {
       limit: limit ? Number(limit) : undefined,
     }),
   });
+});
+
+publicRoutes.get("/assets/:assetId/preview", async (c) => {
+  const preview = await getPublicAssetPreview(c.env, c.req.param("assetId"));
+
+  if (!preview) {
+    return c.json({ error: "Asset not found" }, 404);
+  }
+
+  return c.json(preview);
 });

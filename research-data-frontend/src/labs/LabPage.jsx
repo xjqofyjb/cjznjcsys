@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { apiJson } from "../upload/api";
-import { Badge, EmptyState, LoadingState, MetricCard, SurfaceCard } from "../shared-ui/components";
+import { Badge, Button, EmptyState, LoadingState, MetricCard, SurfaceCard } from "../shared-ui/components";
+import { AssetPreviewModal } from "../shared-ui/AssetPreviewModal";
 import { Icon } from "../shared-ui/icons";
 import { formatDateTime, prettyBytes } from "../shared-ui/formatters";
 
@@ -118,9 +119,14 @@ function mapPublicAssetToDataset(asset) {
     uploader: asset.metadata?.uploaderName || asset.owner_email,
     version: asset.version_label || "v1",
     totalSize: asset.file_size || 0,
+    fileSize: asset.file_size || 0,
     datasetId: asset.dataset_kind || "dataset",
     createdAt: asset.created_at,
     fileName: asset.file_name,
+    file_name: asset.file_name,
+    file_size: asset.file_size || 0,
+    contentType: asset.content_type,
+    content_type: asset.content_type,
     description: asset.description || asset.metadata?.description || "",
     status: asset.status,
   };
@@ -138,7 +144,7 @@ function statusLabel(status) {
   return labels[status] || status || "已收录";
 }
 
-function StudentDataRail({ lab, datasets, loading, error }) {
+function StudentDataRail({ lab, datasets, loading, error, onPreview }) {
   return (
     <aside className="student-data-rail" aria-label={`${lab.shortLabel}学生上传数据`}>
       <SurfaceCard className="student-data-panel">
@@ -194,6 +200,12 @@ function StudentDataRail({ lab, datasets, loading, error }) {
                 <span>{formatDateTime(item.createdAt)}</span>
                 <span>{item.datasetId}</span>
               </div>
+              <div className="student-data-card__actions">
+                <Button variant="secondary" className="preview-button" onClick={() => onPreview(item)}>
+                  <Icon type="monitor" size={14} />
+                  <span>在线预览</span>
+                </Button>
+              </div>
             </SurfaceCard>
           ))}
         </div>
@@ -206,6 +218,7 @@ export function LabPage({ lab }) {
   const [datasets, setDatasets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [previewAsset, setPreviewAsset] = useState(null);
 
   const knowledge = useMemo(() => labKnowledge[lab.key] || labKnowledge["lab-water"], [lab.key]);
 
@@ -378,8 +391,10 @@ export function LabPage({ lab }) {
           </section>
         </main>
 
-        <StudentDataRail lab={lab} datasets={datasets} loading={loading} error={error} />
+        <StudentDataRail lab={lab} datasets={datasets} loading={loading} error={error} onPreview={setPreviewAsset} />
       </section>
+
+      {previewAsset ? <AssetPreviewModal asset={previewAsset} onClose={() => setPreviewAsset(null)} /> : null}
     </>
   );
 }
