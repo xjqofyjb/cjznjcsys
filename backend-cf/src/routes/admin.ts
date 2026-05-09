@@ -17,6 +17,7 @@ import {
 } from "../services/admin";
 import type { AuthUser } from "../lib/types";
 import { createUserWithPassword, updateManagedUser } from "../services/auth";
+import { listLearningResourcesForAdmin, reviewLearningResource } from "../services/learning";
 
 export const adminRoutes = new Hono<{ Bindings: AppEnv; Variables: { authUser: AuthUser } }>();
 
@@ -121,6 +122,40 @@ adminRoutes.post("/assets/:assetId/restore", async (c) => {
 
 adminRoutes.get("/actions", async (c) => {
   return c.json({ items: await listAdminActions(c.env) });
+});
+
+adminRoutes.get("/learning-resources", async (c) => {
+  return c.json({ items: await listLearningResourcesForAdmin(c.env) });
+});
+
+adminRoutes.patch("/learning-resources/:resourceId", async (c) => {
+  const admin = c.get("authUser");
+  const resourceId = c.req.param("resourceId");
+  const allowedStatuses = new Set(["pending", "approved", "rejected", "archived"]);
+  const body = await c.req.json<{
+    status?: "pending" | "approved" | "rejected" | "archived";
+    reviewNote?: string;
+  }>().catch(() => null);
+
+  if (!body?.status || !allowedStatuses.has(body.status)) {
+    return badRequest("status must be pending, approved, rejected, or archived");
+  }
+
+  const updated = await reviewLearningResource(c.env, admin, resourceId, {
+    status: body.status,
+    reviewNote: body.reviewNote,
+  });
+
+  if (!updated) {
+    return notFound("Learning resource not found");
+  }
+
+  await recordAdminAction(c.env, admin, "learning_resource", resourceId, "review", {
+    status: body.status,
+    reviewNote: body.reviewNote,
+  });
+
+  return c.json({ item: updated });
 });
 
 adminRoutes.get("/users", async (c) => {

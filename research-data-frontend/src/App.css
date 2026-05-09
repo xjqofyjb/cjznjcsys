@@ -1601,6 +1601,45 @@
   font-size: 13px;
 }
 
+.learning-resource-card,
+.learning-review-card,
+.learning-submit-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.learning-resource-card::before,
+.learning-review-card::before,
+.learning-submit-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 5px;
+  background: linear-gradient(90deg, #0b6aa8, #30a98e, #f2b84b);
+}
+
+.learning-resource-card::after,
+.learning-review-card::after {
+  content: "";
+  position: absolute;
+  right: -54px;
+  bottom: -54px;
+  width: 150px;
+  height: 150px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(48, 169, 142, 0.14), transparent 68%);
+  pointer-events: none;
+}
+
+.learning-resource-card .dataset-card__actions {
+  justify-content: flex-start;
+}
+
+.learning-submit-card .form-grid {
+  position: relative;
+  z-index: 1;
+}
+
 .asset-preview-backdrop {
   z-index: 90;
   padding: 20px;

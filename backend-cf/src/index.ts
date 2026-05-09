@@ -4,6 +4,7 @@ import { authRoutes } from "./routes/auth";
 import { uploadRoutes } from "./routes/uploads";
 import { adminRoutes } from "./routes/admin";
 import { publicRoutes } from "./routes/public";
+import { learningRoutes } from "./routes/learning";
 
 const app = new Hono<{ Bindings: AppEnv }>();
 
@@ -57,6 +58,7 @@ app.get("/healthz", (c) =>
 
 app.route("/api/v1/auth", authRoutes);
 app.route("/api/v1/public", publicRoutes);
+app.route("/api/v1/learning", learningRoutes);
 app.route("/api/v1/uploads", uploadRoutes);
 app.route("/api/v1/admin", adminRoutes);
 

@@ -389,6 +389,7 @@ function AdminPanel() {
   const [uploads, setUploads] = useState([]);
   const [assets, setAssets] = useState([]);
   const [users, setUsers] = useState([]);
+  const [learningResources, setLearningResources] = useState([]);
   const [actions, setActions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [actingId, setActingId] = useState("");
@@ -402,11 +403,12 @@ function AdminPanel() {
     setError("");
 
     try {
-      const [dashboardResult, uploadsResult, assetsResult, usersResult, actionsResult] = await Promise.all([
+      const [dashboardResult, uploadsResult, assetsResult, usersResult, learningResult, actionsResult] = await Promise.all([
         apiJson("/admin/dashboard"),
         apiJson("/admin/uploads"),
         apiJson("/admin/assets"),
         apiJson("/admin/users"),
+        apiJson("/admin/learning-resources"),
         apiJson("/admin/actions"),
       ]);
 
@@ -419,6 +421,7 @@ function AdminPanel() {
           return left.status === "pending" ? -1 : 1;
         }),
       );
+      setLearningResources(learningResult?.items || []);
       setActions(actionsResult?.items || []);
     } catch (nextError) {
       setError(nextError.message || "管理员数据加载失败");
@@ -515,6 +518,24 @@ function AdminPanel() {
       await loadAdminData();
     } catch (nextError) {
       setError(nextError.message || "批准注册失败");
+    } finally {
+      setActingId("");
+    }
+  }
+
+  async function handleLearningReview(resourceId, status) {
+    setActingId(`learning-${resourceId}-${status}`);
+    setError("");
+
+    try {
+      await apiJson(`/admin/learning-resources/${resourceId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      await loadAdminData();
+    } catch (nextError) {
+      setError(nextError.message || "学习资料审核失败");
     } finally {
       setActingId("");
     }
@@ -617,6 +638,89 @@ function AdminPanel() {
           </form>
         </SurfaceCard>
       </div>
+
+      <PageSection
+        eyebrow="Learning Review"
+        title="学习资料审核"
+        subtitle="所有用户在学习中心提交的论文、链接和教程资料会先进入这里，管理员批准后才会公开展示。"
+      >
+        {loading ? <LoadingState title="正在加载学习资料投稿..." /> : null}
+        {!loading && learningResources.length === 0 ? (
+          <EmptyState title="暂无学习资料投稿" description="用户在学习中心提交资料后，会出现在这里等待审核。" iconType="book" />
+        ) : null}
+        {!loading && learningResources.length > 0 ? (
+          <div className="dataset-grid">
+            {learningResources.map((item) => (
+              <SurfaceCard key={item.id} className="dataset-card learning-review-card">
+                <div className="dataset-card__top">
+                  <div>
+                    <h3>{item.title}</h3>
+                    <p>{item.description || item.citation || "暂无说明"}</p>
+                  </div>
+                  <Badge tone={item.status === "approved" ? "aurora" : item.status === "rejected" ? "copper" : "ocean"} subtle>
+                    {item.resource_type} · {item.status}
+                  </Badge>
+                </div>
+
+                {item.tags?.length ? (
+                  <div className="tag-cloud">
+                    {item.tags.map((tag) => (
+                      <Badge key={`${item.id}-${tag}`} tone="ocean" subtle>
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : null}
+
+                <div className="dataset-card__facts">
+                  <span>
+                    <Icon type="users" size={14} />
+                    {item.submitter_name || item.submitter_email || "未知用户"}
+                  </span>
+                  <span>
+                    <Icon type="chart" size={14} />
+                    {formatDateTime(item.created_at)}
+                  </span>
+                  {item.resource_url ? (
+                    <span>
+                      <Icon type="globe" size={14} />
+                      外部链接
+                    </span>
+                  ) : null}
+                </div>
+
+                <div className="admin-asset-actions">
+                  {item.resource_url ? (
+                    <a className="app-button app-button--secondary" href={item.resource_url} target="_blank" rel="noreferrer">
+                      打开链接
+                    </a>
+                  ) : null}
+                  <Button
+                    disabled={actingId === `learning-${item.id}-approved` || item.status === "approved"}
+                    onClick={() => handleLearningReview(item.id, "approved")}
+                  >
+                    批准公开
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    disabled={actingId === `learning-${item.id}-rejected` || item.status === "rejected"}
+                    onClick={() => handleLearningReview(item.id, "rejected")}
+                  >
+                    驳回
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    disabled={actingId === `learning-${item.id}-archived` || item.status === "archived"}
+                    onClick={() => handleLearningReview(item.id, "archived")}
+                  >
+                    归档
+                  </Button>
+                </div>
+              </SurfaceCard>
+            ))}
+          </div>
+        ) : null}
+      </PageSection>
 
       <PageSection eyebrow="Users" title="账号管理" subtitle="支持前端直接完成账号创建、角色调整、密码重置和停用操作。">
         {loading ? <LoadingState title="正在加载账号列表..." /> : null}
