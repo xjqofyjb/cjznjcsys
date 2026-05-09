@@ -1,5 +1,9 @@
 :root {
-  font-family: "Segoe UI Variable Text", "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  --font-sans: "HarmonyOS Sans SC", "MiSans", "Alibaba PuHuiTi", "OPPO Sans", "Segoe UI Variable Text", "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+  --font-display: "Source Han Serif SC", "Noto Serif SC", "Songti SC", "STSong", "SimSun", serif;
+  --font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+
+  font-family: var(--font-sans);
   color: #17314f;
   background:
     radial-gradient(circle at top left, rgba(90, 158, 216, 0.18), transparent 30%),
@@ -10,6 +14,7 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "kern" 1;
 }
 
 *,
